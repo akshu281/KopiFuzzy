@@ -6,7 +6,7 @@ import skfuzzy as fuzz
 from matplotlib import pyplot
 
 #Parse the dict to get all the inputs from the UI
-kopidict={'kopi':5,'milk':5,'sugar':5}
+kopidict={'kopi':10,'milk':0,'sugar':0}
 kopi_input= kopidict['kopi']*10
 milk_input = kopidict['milk']*10
 sugar_input = kopidict['sugar']
@@ -69,11 +69,11 @@ print(fuzz.interp_membership(kopi.universe,kopi_thick,kopi_input))
 """Milk Level"""
 
 milk_pre_bins = np.arange(0,1,0.1)
-milk_pre=ctrl.Antecedent(milk_pre_bins,'milk_zero')
-milk_zero=fuzz.sigmf(milk_pre.universe,0.5,1)
-milk_pre['milk_zero']=milk_zero
+milk_pre=ctrl.Antecedent(milk_pre_bins,'milk_pre')
+milk_pre_mf=fuzz.sigmf(milk_pre.universe,0.5,1)
+milk_pre['milk_pre']=milk_pre_mf
 #milk input value being passed as the last argument
-val_milk = fuzz.interp_membership(milk_pre.universe,milk_zero,milk_input) 
+val_milk = fuzz.interp_membership(milk_pre.universe,milk_pre_mf,milk_input) 
 print("Milk MF:")
 print(val_milk)
 
@@ -124,11 +124,11 @@ else:
 """Sweetness Membership Function"""
 
 sugar_pre_bins = np.arange(0,1,0.1)
-sugar_pre=ctrl.Antecedent(sugar_pre_bins,'sugar_zero')
-sugar_zero=fuzz.sigmf(sugar_pre.universe,0.5,1)
-sugar_pre['sugar_zero']=sugar_zero
+sugar_pre=ctrl.Antecedent(sugar_pre_bins,'sugar_pre')
+sugar_pre_mf=fuzz.sigmf(sugar_pre.universe,0.5,1)
+sugar_pre['sugar_pre']=sugar_pre_mf
 #sugar input value being passed as the last argument
-val_sugar = fuzz.interp_membership(sugar_pre.universe,sugar_zero,sugar_input) 
+val_sugar = fuzz.interp_membership(sugar_pre.universe,sugar_pre_mf,sugar_input) 
 print("Sugar MF:")
 print(val_sugar)
 
@@ -141,8 +141,8 @@ if val_sugar == 0.0:
     sugar_extra=fuzz.smf(sugar.universe,6,8)
     sugar_norm=fuzz.trimf(sugar.universe,[3,5,7])
     sugar_less=fuzz.zmf(sugar.universe,2,4)
-    # sugar_zero= 0
-    # sugar['zero']=sugar_zero
+    # sugar_pre= 0
+    # sugar['zero']=sugar_pre
     sugar['norm']=sugar_norm
     sugar['extra']=sugar_extra
     sugar['less'] = sugar_less
@@ -153,58 +153,87 @@ if val_sugar == 0.0:
     print(fuzz.interp_membership(sugar.universe,sugar_extra,sugar_input))
 else:
     sugar_y = 0
-    # sugar['zero'] = sugar_zero
+    # sugar['zero'] = sugar_pre
     print("No Sugar")
     
 """Ouput Membership Function"""
 
-out=ctrl.Consequent(np.arange(0,1,0.1),'out')
-output=fuzz.sigmf(out.universe,0.5,1)
-out['Kopi_O']=output
-out['Kopi_O_KoSong']=output
-out['Kopi_O_Siew_Dai']=output
-out['Kopi_O_Ga_Dai']=output
-out['Kopi_C']=output
-out['Kopi_C_Siew_Dai']=output
-out['Kopi_C_Ga_Dai']=output
-out['Kopi']=output
-out['Kopi_Gao']=output
-out['Kopi_Di_Lo']=output
-out['Kopi_Poh']=output
-# out.view()
+# output=ctrl.Consequent(np.arange(0,1,0.1),'output')
+# output=fuzz.sigmf(output.universe,0.5,1)
+# output['Kopi_O']=output
+# output['Kopi_O_KoSong']=output
+# output['Kopi_O_Siew_Dai']=output
+# output['Kopi_O_Ga_Dai']=output
+# output['Kopi_C']=output
+# output['Kopi_C_Siew_Dai']=output
+# output['Kopi_C_Ga_Dai']=output
+# output['Kopi']=output
+# output['Kopi_Gao']=output
+# output['Kopi_Di_Lo']=output
+# output['Kopi_Poh']=output
+
+universe = np.linspace(-5, 5, 11)
+output = ctrl.Consequent(universe, 'output')
+names = ['Kopi_O', 'Kopi_O_KoSong', 'Kopi_O_Siew_Dai', 'Kopi_O_Ga_Dai', 'Kopi_C','Kopi_C_Siew_Dai','Kopi_C_Ga_Dai','Kopi','Kopi_Gao','Kopi_Di_Lo','Kopi_Poh']
+output.automf(names=names)
+
+# output.view()
 # pyplot.show()
 
-# Rules for zero milk 
-rule_1= ctrl.Rule(milk_pre['milk_zero'] & sugar['norm'] & kopi['norm'],out['Kopi_O'], label='Kopi_O')
-rule_2= ctrl.Rule(milk_pre['milk_zero'] & sugar_pre['sugar_zero'] & kopi['norm'],out['Kopi_O_KoSong'], label='Kopi_O_KoSong')
-rule_3= ctrl.Rule(milk_pre['milk_zero'] & sugar['less'] & kopi['norm'],out['Kopi_O_Siew_Dai'], label='Kopi_O_Siew_Dai')
-rule_4= ctrl.Rule(milk_pre['milk_zero'] & sugar['extra'] & kopi['norm'],out['Kopi_O_Ga_Dai'], label='Kopi_O_Ga_Dai')
+# Rules for zero milk and various sugar levels
+rule_1= ctrl.Rule(milk_pre['milk_pre'] & sugar['less'] & kopi['thick'], output['Kopi_O'], label='Kopi_O')
+rule_2= ctrl.Rule(milk_pre['milk_pre'] & sugar['less'] & kopi['norm'], output['Kopi_O_Siew_Dai'], label='Kopi_O_Siew_Dai')
+rule_3= ctrl.Rule(milk_pre['milk_pre'] & sugar['extra'] & kopi['norm'], output['Kopi_O_Ga_Dai'], label='Kopi_O_Ga_Dai')
 
-#Rules for other levels of milk
-# rule_5= 
-# rule_6= 
-# rule_7= 
+#Rules for zero sugar and zero milk
+rule_4= ctrl.Rule(milk_pre['milk_pre'] & sugar_pre['sugar_pre'] & kopi['norm'], output['Kopi_O_KoSong'], label='Kopi_O_KoSong')
+
+#Rules for zero sugar and various milk levels
+# rule_5= rule_4= ctrl.Rule(milk_pre['milk_pre'] & sugar_pre['sugar_pre'] & kopi['norm'], output['Kopi_O_KoSong'], label='Kopi')
+# rule_6= rule_4= ctrl.Rule(milk_pre['milk_pre'] & sugar_pre['sugar_pre'] & kopi['norm'], output['Kopi_O_KoSong'], label='Kopi Gao')
+# rule_7= rule_4= ctrl.Rule(milk_pre['milk_pre'] & sugar_pre['sugar_pre'] & kopi['norm'], output['Kopi_O_KoSong'], label='Kopi Di Lo')
+
+#Rules for various sugar and milk levels 
+#rule_=
 
 def fuzzyscore():
     #Check with direct input variable or flag !?!
-    if milk_y == 1.0:
-        ctrl_sys= ctrl.ControlSystem([rule_1,rule_2,rule_3,rule_4])
+    if milk_y == 0.0 and sugar_y == 1.0:
+        print("Rules for kopi without milk and various sugar levels")
+        ctrl_sys= ctrl.ControlSystem([rule_1,rule_2,rule_3])
         sim = ctrl.ControlSystemSimulation(ctrl_sys, flush_after_run=21 * 21 + 1)
         sim.input['kopi']= kopi_input
         sim.input['sugar']= sugar_input
         sim.input['milk_pre']= milk_input
         sim.compute()
-        return(sim.output['out'])
-
-    else:
+        return(sim.output['output'])
+    elif milk_y == 0.0 and sugar_y == 0.0:
+        print("Rules for kopi without milk and no sugar ")
+    elif milk_y == 1.0 and sugar_y == 0.0:
+        print("Rules for kopi with milk and no sugar")
         # ctrl_sys= ctrl.ControlSystem([rule_,rule_,rule_])
         # sim = ctrl.ControlSystemSimulation(ctrl_sys, flush_after_run=21 * 21 + 1)
         # sim.input['kopi']= kopi_input
         # sim.input['sugar']= sugar_input
         # sim.input['milk']= milk_input
         # sim.compute()
-        # return(sim.output['out'])
-        print("Elseeeeeeee")
+        # return(sim.output['output'])
+    elif milk_y == 1.0 and sugar_y == 1.0:
+        print("Rules for kopi various levels of milk and sugar")
 
+#Calculate fuzzy score output for determing the Kopi type
 score = fuzzyscore()
 print(score)
+kopi_check=round(score)
+
+# Assign and return the Kopi type based on the fuzzified inputs
+if kopi_check == -5:
+    print("Kopi_O")
+elif kopi_check == -4:
+    print("Kopi_O_KoSong")
+elif kopi_check == -3:
+    print("Kopi_O_Siew_Dai")
+elif kopi_check == -2:
+    print("Kopi_O_Ga_Dai")
+# else if kopi_check == -1:
+#     print("")
